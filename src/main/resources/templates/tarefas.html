@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Agenda de Tarefas</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .form-group { margin-bottom: 1rem; display: flex; gap: 10px; }
+        input, select { padding: 0.5rem; }
+        button { padding: 0.5rem 1rem; cursor: pointer; background-color: #28a745; color: white; border: none; }
+        .btn-delete { background-color: #dc3545; text-decoration: none; padding: 5px 10px; color: white; border-radius: 3px; font-size: 0.8rem;}
+        .btn-details { background-color: #007bff; text-decoration: none; padding: 5px 10px; color: white; border-radius: 3px; font-size: 0.8rem;}
+        .search-bar { background: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<h1>Agenda de Tarefas</h1>
+
+<div class="search-bar">
+    <form action="/tarefas" method="get">
+        <input type="text" name="busca" placeholder="Buscar por palavra-chave..." style="width: 70%;">
+        <button type="submit" style="background-color: #6c757d;">Buscar</button>
+        <a href="/tarefas" th:if="${param.busca}" style="margin-left: 10px;">Limpar</a>
+    </form>
+</div>
+
+<div style="background: #f9f9f9; padding: 1rem; border-radius: 5px;">
+    <h3>Nova Tarefa</h3>
+    <form action="/tarefas/salvar" method="post">
+        <div class="form-group">
+            <input type="text" name="descricao" placeholder="Descrição da tarefa" required style="flex-grow: 1;">
+            <input type="date" name="dataExecucao" required>
+
+            <select name="tipo">
+                <option value="SIMPLES">Simples</option>
+                <option value="COMPLEXA">Complexa</option>
+            </select>
+
+            <button type="submit">Adicionar</button>
+        </div>
+    </form>
+</div>
+
+<h3>Lista de Tarefas</h3>
+<table>
+    <thead>
+    <tr>
+        <th>Descrição</th>
+        <th>Data</th>
+        <th>Tipo</th>
+        <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="tarefa : ${listaTarefas}">
+        <td>
+            <strong th:text="${tarefa.descricao}" style="font-size: 1.1em;">Descrição</strong>
+
+            <div th:if="${tarefa instanceof T(br.com.agenda.agenda_tarefas.model.TarefaComplexa)}"
+                 style="margin-top: 10px; margin-left: 10px; font-size: 0.9em; background: #f8f9fa; padding: 8px; border-radius: 5px;">
+
+                <div th:each="etapa : ${tarefa.etapas}" style="margin-bottom: 4px;">
+                    <form th:action="@{/tarefas/{idT}/etapas/{idE}/toggle(idT=${tarefa.id}, idE=${etapa.id})}"
+                          method="post" style="display: inline;">
+
+                        <label style="cursor: pointer;">
+                            <input type="checkbox"
+                                   th:checked="${etapa.concluida}"
+                                   onchange="this.form.submit()" />
+
+                            <span th:text="${etapa.descricao}"
+                                  th:style="${etapa.concluida} ? 'text-decoration: line-through; color: #888;' : ''">
+                                        Nome da etapa
+                                    </span>
+                        </label>
+                    </form>
+                </div>
+
+                <div th:if="${#lists.isEmpty(tarefa.etapas)}" style="color: #999; font-style: italic;">
+                    Sem etapas definidas.
+                </div>
+            </div>
+        </td>
+
+        <td th:text="${#temporals.format(tarefa.dataExecucao, 'dd/MM/yyyy')}">Data</td>
+
+        <td th:text="${tarefa instanceof T(br.com.agenda.agenda_tarefas.model.TarefaComplexa) ? 'Complexa' : 'Simples'}">Tipo</td>
+
+        <td>
+            <a th:if="${tarefa instanceof T(br.com.agenda.agenda_tarefas.model.TarefaComplexa)}"
+               th:href="@{/tarefas/{id}(id=${tarefa.id})}"
+               class="btn-details">Editar Etapas</a>
+
+            <a th:href="@{/tarefas/deletar(id=${tarefa.id})}" class="btn-delete">Excluir</a>
+        </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(listaTarefas)}">
+        <td colspan="4" style="text-align:center; color: #777;">Nenhuma tarefa encontrada.</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
